@@ -35,6 +35,21 @@ function toast(msg) {
   toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
 }
 
+// ── Theme (hell/dunkel/System) ──────────────────────────────────────────
+function applyTheme(theme) {
+  if (theme === 'light' || theme === 'dark') document.documentElement.setAttribute('data-theme', theme);
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('tp_theme', theme);
+  updateThemeToggleUI();
+}
+function updateThemeToggleUI() {
+  const current = localStorage.getItem('tp_theme') || 'system';
+  document.querySelectorAll('#theme-toggle .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === current));
+}
+document.querySelectorAll('#theme-toggle .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+});
+
 function showView(id) {
   ['view-loading', 'view-setup', 'view-pin-create', 'view-lock', 'view-app'].forEach(v => {
     document.getElementById(v).hidden = v !== id;
@@ -973,7 +988,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     }[btn.dataset.tab];
     if (btn.dataset.tab === 'stats') renderStats();
     if (btn.dataset.tab === 'tactics') renderTactics();
-    if (btn.dataset.tab === 'settings') renderCategories();
+    if (btn.dataset.tab === 'settings') { renderCategories(); updateThemeToggleUI(); }
   });
 });
 
@@ -1003,6 +1018,7 @@ if ('serviceWorker' in navigator) {
 }
 
 function init() {
+  updateThemeToggleUI();
   loadStateFromLocal();
   populateCategorySelects();
   const pinSet = !!localStorage.getItem('tp_pin_hash');

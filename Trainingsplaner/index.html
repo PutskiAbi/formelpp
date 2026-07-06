@@ -7,6 +7,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0B1220">
+<script>
+  (function () {
+    var t = localStorage.getItem('tp_theme');
+    if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -114,6 +120,13 @@
 
     <!-- ─── Einstellungen / Kategorien ─── -->
     <section id="tab-settings" class="tab-panel" hidden>
+      <h2>Design</h2>
+      <div class="tabs" id="theme-toggle">
+        <button class="tab-btn" data-theme="system">System</button>
+        <button class="tab-btn" data-theme="light">Hell</button>
+        <button class="tab-btn" data-theme="dark">Dunkel</button>
+      </div>
+
       <h2>Kategorien</h2>
       <div id="category-list" class="category-list"></div>
       <button id="btn-add-category" class="btn-secondary">+ Neue Kategorie</button>

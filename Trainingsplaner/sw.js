@@ -1,4 +1,4 @@
-const CACHE = 'trainingsplaner-v1';
+const CACHE = 'trainingsplaner-v2';
 const ASSETS = [
   './index.html', './style.css', './app.js',
   './supabase-config.js', './manifest.json', './icon.svg',
