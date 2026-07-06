@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Trainingsplaner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0B1220">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════════ LOADING ══════════════════ -->
+<div id="view-loading" class="view view-center">
+  <div class="spinner"></div>
+</div>
+
+<!-- ══════════════════ SETUP (Erstregistrierung / Gerät verknüpfen) ══════════════════ -->
+<div id="view-setup" class="view view-center" hidden>
+  <div class="card auth-card">
+    <img src="icon.svg" class="auth-logo" alt="">
+    <h1>Trainingsplaner</h1>
+    <div class="tabs" id="setup-tabs">
+      <button class="tab-btn active" data-mode="signup">Neues Konto</button>
+      <button class="tab-btn" data-mode="signin">Gerät verknüpfen</button>
+    </div>
+    <p class="hint" id="setup-hint">Einmalig ein Konto erstellen. Danach reicht auf diesem Gerät ein PIN.</p>
+    <form id="setup-form">
+      <label>E-Mail
+        <input type="email" id="setup-email" autocomplete="username" required>
+      </label>
+      <label>Passwort
+        <input type="password" id="setup-password" autocomplete="new-password" required minlength="6">
+      </label>
+      <button type="submit" class="btn-primary" id="setup-submit">Konto erstellen</button>
+    </form>
+    <p class="error" id="setup-error"></p>
+  </div>
+</div>
+
+<!-- ══════════════════ PIN SETZEN (nach Setup/Verknüpfen) ══════════════════ -->
+<div id="view-pin-create" class="view view-center" hidden>
+  <div class="card auth-card">
+    <h1>PIN festlegen</h1>
+    <p class="hint">Dieser PIN entsperrt die App künftig nur auf diesem Gerät.</p>
+    <div class="pin-dots" id="pin-create-dots"></div>
+    <div class="pin-dots" id="pin-confirm-dots" hidden></div>
+    <p class="error" id="pin-create-error"></p>
+    <div class="keypad" id="pin-create-keypad"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ PIN LOCK ══════════════════ -->
+<div id="view-lock" class="view view-center" hidden>
+  <div class="card auth-card">
+    <img src="icon.svg" class="auth-logo" alt="">
+    <h1>Willkommen zurück</h1>
+    <div class="pin-dots" id="lock-dots"></div>
+    <p class="error" id="lock-error"></p>
+    <div class="keypad" id="lock-keypad"></div>
+    <button class="btn-link" id="lock-unlink">Anderes Konto verknüpfen</button>
+  </div>
+</div>
+
+<!-- ══════════════════ HAUPT-APP ══════════════════ -->
+<div id="view-app" class="view" hidden>
+  <header class="app-header">
+    <h1 id="app-title">Kalender</h1>
+    <span class="sync-badge" id="sync-badge" hidden>offline · Änderungen ausstehend</span>
+  </header>
+
+  <main class="app-content">
+
+    <!-- ─── Kalender ─── -->
+    <section id="tab-calendar" class="tab-panel">
+      <div class="cal-toolbar">
+        <button id="cal-prev" class="icon-btn" aria-label="Zurück">‹</button>
+        <button id="cal-today" class="btn-chip">Heute</button>
+        <span id="cal-range-label" class="cal-range-label"></span>
+        <button id="cal-next" class="icon-btn" aria-label="Weiter">›</button>
+      </div>
+      <div class="tabs cal-view-toggle" id="cal-view-toggle">
+        <button class="tab-btn" data-view="week">Woche</button>
+        <button class="tab-btn" data-view="month">Monat</button>
+      </div>
+
+      <div id="cal-month-grid" class="cal-month-grid" hidden></div>
+      <div id="cal-agenda" class="cal-agenda"></div>
+
+      <button id="fab-add-session" class="fab" aria-label="Neuer Termin">+</button>
+    </section>
+
+    <!-- ─── Statistik ─── -->
+    <section id="tab-stats" class="tab-panel" hidden>
+      <div class="stats-range-toggle tabs" id="stats-range-toggle">
+        <button class="tab-btn active" data-range="4w">4 Wochen</button>
+        <button class="tab-btn" data-range="12w">12 Wochen</button>
+        <button class="tab-btn" data-range="12m">12 Monate</button>
+      </div>
+      <div class="stats-summary" id="stats-summary"></div>
+      <div class="chart-card"><canvas id="chart-hours"></canvas></div>
+      <div class="chart-card"><canvas id="chart-category"></canvas></div>
+    </section>
+
+    <!-- ─── Taktikblatt ─── -->
+    <section id="tab-tactics" class="tab-panel" hidden>
+      <div class="tactics-toolbar">
+        <select id="tactics-filter"><option value="">Alle Kategorien</option></select>
+        <button id="btn-add-tactic" class="btn-chip">+ Erkenntnis</button>
+      </div>
+      <div id="tactics-list" class="tactics-list"></div>
+    </section>
+
+    <!-- ─── Einstellungen / Kategorien ─── -->
+    <section id="tab-settings" class="tab-panel" hidden>
+      <h2>Kategorien</h2>
+      <div id="category-list" class="category-list"></div>
+      <button id="btn-add-category" class="btn-secondary">+ Neue Kategorie</button>
+
+      <h2>Benachrichtigungen</h2>
+      <button id="btn-enable-notifications" class="btn-secondary">Erinnerungen aktivieren</button>
+      <p class="hint">Lokale Erinnerungen funktionieren, solange die App im Hintergrund/Vordergrund offen ist. Echte Push-Benachrichtigungen bei geschlossener App sind ein späterer Ausbau.</p>
+
+      <h2>Gerät</h2>
+      <button id="btn-logout" class="btn-danger">Gerät abmelden</button>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="calendar"><span class="nav-icon">📅</span>Kalender</button>
+    <button class="nav-btn" data-tab="stats"><span class="nav-icon">📊</span>Statistik</button>
+    <button class="nav-btn" data-tab="tactics"><span class="nav-icon">📋</span>Taktik</button>
+    <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span>Mehr</button>
+  </nav>
+</div>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+<div id="modal-backdrop" class="modal-backdrop" hidden></div>
+
+<div id="modal-session" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="session-modal-title">Neuer Termin</h2>
+      <button class="icon-btn modal-close" data-close="modal-session">×</button>
+    </div>
+    <form id="session-form">
+      <input type="hidden" id="session-id">
+      <label>Kategorie
+        <select id="session-category" required></select>
+      </label>
+      <label>Titel
+        <input type="text" id="session-title" placeholder="z.B. Teamtraining">
+      </label>
+      <div class="row-2">
+        <label>Datum <input type="date" id="session-date" required></label>
+        <label>Uhrzeit <input type="time" id="session-time"></label>
+      </div>
+      <label>Dauer (Minuten)
+        <input type="number" id="session-duration" min="5" step="5" value="60" required>
+      </label>
+
+      <div id="session-detail-distance" class="detail-group" hidden>
+        <div class="row-2">
+          <label>Distanz (km) <input type="number" id="detail-distance-km" step="0.1" min="0"></label>
+          <label>Ø Pace (min/km) <input type="text" id="detail-pace" placeholder="z.B. 5:30"></label>
+        </div>
+      </div>
+
+      <div id="session-detail-exercises" class="detail-group" hidden>
+        <label>Übungen</label>
+        <div id="exercise-rows"></div>
+        <button type="button" class="btn-chip" id="btn-add-exercise">+ Übung</button>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="session-recurring"> Wiederholt sich wöchentlich
+      </label>
+      <div id="recurring-options" class="detail-group" hidden>
+        <label>Wochentage</label>
+        <div class="weekday-picker" id="weekday-picker">
+          <button type="button" class="wd-btn" data-wd="0">Mo</button>
+          <button type="button" class="wd-btn" data-wd="1">Di</button>
+          <button type="button" class="wd-btn" data-wd="2">Mi</button>
+          <button type="button" class="wd-btn" data-wd="3">Do</button>
+          <button type="button" class="wd-btn" data-wd="4">Fr</button>
+          <button type="button" class="wd-btn" data-wd="5">Sa</button>
+          <button type="button" class="wd-btn" data-wd="6">So</button>
+        </div>
+        <label>Bis (optional) <input type="date" id="session-until"></label>
+      </div>
+
+      <label>Notizen
+        <textarea id="session-notes" rows="2"></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-danger" id="btn-delete-session" hidden>Löschen</button>
+        <button type="submit" class="btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modal-survey" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Training abschliessen</h2>
+      <button class="icon-btn modal-close" data-close="modal-survey">×</button>
+    </div>
+    <form id="survey-form">
+      <input type="hidden" id="survey-session-id">
+      <div class="survey-field">
+        <label>Intensität <span id="survey-intensity-val">5</span>/10</label>
+        <input type="range" id="survey-intensity" min="1" max="10" value="5">
+      </div>
+      <div class="survey-field">
+        <label>Leistung</label>
+        <div class="star-rating" id="survey-performance" data-value="3"></div>
+      </div>
+      <div class="survey-field">
+        <label>Verfassung / Fitness</label>
+        <div class="star-rating" id="survey-fitness" data-value="3"></div>
+      </div>
+      <label>Taktische Erkenntnis (optional)
+        <textarea id="survey-tactic-note" rows="2" placeholder="Was hast du Neues gelernt?"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modal-category" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="category-modal-title">Neue Kategorie</h2>
+      <button class="icon-btn modal-close" data-close="modal-category">×</button>
+    </div>
+    <form id="category-form">
+      <input type="hidden" id="category-id">
+      <label>Name
+        <input type="text" id="category-name" required placeholder="z.B. Laufeinheit">
+      </label>
+      <label>Farbe
+        <input type="color" id="category-color" value="#3b82f6">
+      </label>
+      <label class="checkbox-row"><input type="checkbox" id="category-field-distance"> Distanz &amp; Pace erfassen</label>
+      <label class="checkbox-row"><input type="checkbox" id="category-field-exercises"> Übungsliste erfassen</label>
+      <div class="modal-actions">
+        <button type="button" class="btn-danger" id="btn-delete-category" hidden>Löschen</button>
+        <button type="submit" class="btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modal-tactic" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Neue Erkenntnis</h2>
+      <button class="icon-btn modal-close" data-close="modal-tactic">×</button>
+    </div>
+    <form id="tactic-form">
+      <label>Kategorie (optional)
+        <select id="tactic-category"><option value="">–</option></select>
+      </label>
+      <label>Erkenntnis
+        <textarea id="tactic-content" rows="3" required></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
